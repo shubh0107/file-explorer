@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>File Explorer</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.css"/>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.5/angular.js"></script>
+
+  </head>
+
+  <script>
+      var fileExplorerApp = angular.module('explorerApp',[]);
+      /*fileExplorerApp.controller("MyController", ['$scope', '$log',
+          function($scope) {
+            fetch('http://localhost:3000/list_dir?path=F:/pics')
+                .then(function (data) {
+                    console.log('in angular '+data);
+                    $scope.filesAndFolders = data;
+                }
+            ).catch(function (error) {
+                console.log('error in angular -'+ error);
+            })
+          }
+      ]);*/
+
+      fileExplorerApp.controller("MyController", function ($scope, $http) {
+
+          var currentPath = '';
+          $scope.reload = function (newPath, back) {
+              if(back) {
+                  currentPath = newPath;
+              } else {
+                  if(currentPath === ''){
+                      currentPath = newPath;
+                  } else {
+                      currentPath = currentPath +'/' + newPath;
+                  }
+              }
+              console.log('Newpath- '+currentPath);
+              $http.get('http://localhost:3000/list_dir?path='+currentPath)
+                  .then(function(response){
+                      $scope.filesAndFolders = response.data;
+                      $scope.currentPath = currentPath;
+                  },function (error) {
+                      console.log('Error in $http- '+error);
+                  });
+          }
+
+          $scope.back = function () {
+              var prevPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+                  console.log('Path after substring- '+prevPath);
+              console.log('Prevpath when back clicked- '+ prevPath);
+              $scope.reload(prevPath, true);
+
+          }
+
+          $scope.reload('F:/', false);
+      });
+
+
+
+  </script>
+  <body ng-app="explorerApp" ng-controller="MyController">
+
+  <div class="ui container">
+      <h1 id="currentPath">Current Directory- {{ currentPath }}</h1>
+      <button ng-if="currentPath !== 'F:/'"
+              ng-click="back()"
+              class="ui left labeled icon button">
+          <i class="left arrow icon"></i>
+          Back
+      </button>
+      <div class="ui list">
+          <a class="item"
+             ng-repeat="item in filesAndFolders"
+             ng-click="reload(item.name, false)"
+             ng-href="{{item.type === 'file' ? '/get_file?path='+currentPath+'/'+item.name : ''}}">
+              <i ng-if="item.type === 'folder'" class="folder icon"></i>
+              <i ng-if="item.type === 'file'" class="file icon"></i>
+              {{ item.name }}</a>
+      </div>
+  </div>
+
+
+  </body>
+</html>
